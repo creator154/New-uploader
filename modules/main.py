@@ -477,7 +477,7 @@ async def txt_handler(bot: Client, m: Message):
                             count += 1
                             os.remove(downloaded_file)
                         else:
-                            await m.reply_text(❌ **Decryption Failed:**)
+                            await m.reply_text(f"❌ **Decryption Failed:**")
                             count += 1
                         
                         time.sleep(1)
