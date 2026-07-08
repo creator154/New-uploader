@@ -7,6 +7,7 @@ import asyncio
 import requests
 import subprocess
 import urllib.parse
+import logging
 import yt_dlp
 import cloudscraper
 import m3u8
@@ -411,6 +412,8 @@ async def txt_handler(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
+                
+                            
                 elif ".pdf" in url:
                     try:
                         await asyncio.sleep(4)
@@ -455,8 +458,62 @@ async def txt_handler(bot: Client, m: Message):
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         time.sleep(e.x)
-                        continue                       
-                          
+                        continue
+                        
+                elif "*" in url:
+                    try:
+                        # URL se key split karein (URL*KEY format check)
+                        enc_key = ""
+                        if "*" in url:
+                            url, enc_key = url.split("*", 1)
+                            url = url.strip()
+                            enc_key = enc_key.strip()
+
+                        # Clean single line call method
+                        downloaded_file = await helper.download_appxpdf(url, name, enc_key)
+
+                        if downloaded_file and os.path.exists(downloaded_file):
+                            copy = await bot.send_document(chat_id=m.chat.id, document=downloaded_file, caption=cc1)
+                            count += 1
+                            os.remove(downloaded_file)
+                        else:
+                            await m.reply_text(❌ **Decryption Failed:**)
+                            count += 1
+                        
+                        time.sleep(1)
+                        continue
+
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        count += 1
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ **Error** {str(e)}")
+                        count += 1
+                        continue
+                        
+                elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
+                    try:
+                        await asyncio.sleep(2)
+                        downloaded_pdf = await helper.download_secure_pdf(url, name)
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id,
+                                document=downloaded_pdf,
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ Appx PDF download fail ho gaya.")
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
+                    
+                         
                 else:
                     Show = f"❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
