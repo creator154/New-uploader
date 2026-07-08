@@ -219,6 +219,195 @@ def save_to_file(video_links, channel_name):
             file.write(f"{number}. {title}: {formatted_url}\n")
     return filename
 
+async def download_appxpdf(url, name, enc_key=""):
+    """
+    Bhai yeh function background thread me silent download aur decryption handle karta hai.
+    Success hone par final file ka path return karega, fail hone par None.
+    """
+    import os
+    import hashlib
+    import shutil
+    import subprocess
+    import urllib.request
+    import asyncio
+
+    pid = os.getpid()
+    temp_enc_file = f"temp_enc_{pid}.pdf"
+    final_pdf_file = f"{name}.pdf"
+
+    # Silent Background Download Engine
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36")
+    req.add_header("Referer", "https://appx-play.akamai.net.in/")
+    
+    try:
+        def _download():
+            with urllib.request.urlopen(req, timeout=60) as response:
+                with open(temp_enc_file, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                    
+        await asyncio.get_event_loop().run_in_executor(None, _download)
+    except Exception:
+        if os.path.exists(temp_enc_file): os.remove(temp_enc_file)
+        return None
+
+    # Silent Decryption Engine (OpenSSL)
+    def _decrypt():
+        if not os.path.exists(temp_enc_file):
+            return False
+
+        # Agar already plain PDF hai
+        with open(temp_enc_file, 'rb') as f:
+            if f.read(4) == b'%PDF':
+                shutil.copy(temp_enc_file, final_pdf_file)
+                return True
+
+        with open(temp_enc_file, 'rb') as f:
+            file_bytes = f.read()
+
+        if len(file_bytes) < 32:
+            return False
+
+        iv_bytes = file_bytes[:16]
+        ciphertext_bytes = file_bytes[16:]
+        temp_cipher = f"temp_cipher_{pid}.bin"
+        temp_plain = f"temp_plain_{pid}.pdf"
+
+        with open(temp_cipher, 'wb') as f:
+            f.write(ciphertext_bytes)
+
+        hex_iv = iv_bytes.hex()
+        candidates = [
+            enc_key.encode('utf-8')[:16].ljust(16, b'\x00'),
+            hashlib.md5(enc_key.encode('utf-8')).digest(),
+            hashlib.sha256(enc_key.encode('utf-8')).digest()[:16]
+        ]
+
+        success = False
+        for cand_bytes in candidates:
+            hex_key = cand_bytes.hex()
+            
+            # Method 1: Standard Padded
+            cmd = ["openssl", "aes-128-cbc", "-d", "-K", hex_key, "-iv", hex_iv, "-in", temp_cipher, "-out", temp_plain]
+            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            if os.path.exists(temp_plain):
+                with open(temp_plain, 'rb') as f:
+                    if f.read(4) == b'%PDF':
+                        shutil.move(temp_plain, final_pdf_file)
+                        success = True
+                        break
+                os.remove(temp_plain)
+
+            # Method 2: Zero IV Fallback
+            cmd_zero = ["openssl", "aes-128-cbc", "-d", "-K", hex_key, "-iv", "00000000000000000000000000000000", "-in", temp_enc_file, "-out", temp_plain]
+            subprocess.run(cmd_zero, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            if os.path.exists(temp_plain):
+                with open(temp_plain, 'rb') as f:
+                    if f.read(4) == b'%PDF':
+                        shutil.move(temp_plain, final_pdf_file)
+                        success = True
+                        break
+                os.remove(temp_plain)
+
+        if os.path.exists(temp_cipher): os.remove(temp_cipher)
+        return success
+
+    decryption_success = await asyncio.get_event_loop().run_in_executor(None, _decrypt)
+    
+    # Clean temporary raw file
+    if os.path.exists(temp_enc_file): 
+        os.remove(temp_enc_file)
+
+    if decryption_success and os.path.exists(final_pdf_file):
+        return final_pdf_file
+    else:
+        if os.path.exists(final_pdf_file): os.remove(final_pdf_file)
+        return None
+        
+async def download_secure_pdf(url, name):
+    """
+    Termux bypass headers ke sath secure PDF download karne ka working function.
+    """
+    clean_name = f"{name}.pdf"
+    print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
+    
+    cmd = [
+        "curl", "-L",
+        "-H", "User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Referer: https://appx-play.akamai.net.in/",
+        "-o", clean_name,
+        url
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.DEVNULL, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        _, stderr_data = await process.communicate()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure PDF] Download safal raha: {clean_name}", flush=True)
+            return clean_name
+        else:
+            err_msg = stderr_data.decode(errors='ignore').strip() if stderr_data else "Unknown"
+            print(f"[Secure PDF] Error: Curl download process fail ho gaya. Log: {err_msg}", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
+        return None
+
+# =====================================================================
+#  ✅ Appx VIDEO DOWNLOAD (Working version - no duplicates)
+# =====================================================================
+async def download_secure_video(url, name):
+    """
+    Normal HLS (.m3u8) video streams ko bypass headers ke sath download aur copy karne ka working function.
+    """
+    clean_name = f"{name}.mp4" if not name.endswith(".mp4") else name
+    print(f"[Secure Video] Stream compile hona suru ho gaya hai: {clean_name}", flush=True)
+    
+    cmd = [
+        "ffmpeg", "-y",
+        "-user_agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-headers", "Referer: https://appx-play.akamai.net.in/\r\n",
+        "-i", url,
+        "-c", "copy",
+        clean_name
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.DEVNULL, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        while True:
+            line_bytes = await process.stderr.readline()
+            if not line_bytes:
+                break
+            line = line_bytes.decode(errors='ignore').strip()
+            if "frame=" in line or "time=" in line or "speed=" in line:
+                print(f"[Secure Video Process] {line}", flush=True)
+            
+        await process.wait()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure Video] Conversion complete ho gaya: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("[Secure Video] Error: FFmpeg run completed with failure.", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure Video] Exception error: {str(e)}", flush=True)
+        return None
+
+
 async def download_video(url, cmd, name):
     download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
     global failed_counter
