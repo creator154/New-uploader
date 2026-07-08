@@ -74,6 +74,7 @@ async def web_server():
     app.add_routes(routes)
     return app
 
+
 # ---------------- START BOT ----------------
 
 async def start_bot():
@@ -92,6 +93,81 @@ async def main():
             await asyncio.sleep(3600)
     finally:
         await stop_bot()
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+def extract_content_id(url):
+    """URL se content ID extract karega with precise debugging"""
+    logger.debug(f"extract_content_id called with URL: {url}")
+    
+    try:
+        if 'contentId=' in url:
+            logger.debug("Found 'contentId=' in URL")
+            parts = url.split('contentId=')
+            
+            if len(parts) > 1:
+                content_id = parts[1]
+                logger.debug(f"Initial split content ID: {content_id}")
+                
+                # 1. URL parameters ('?' ya '&') se split karein taaki baaki ka URL hat jaye
+                for char in ['?', '&']:
+                    if char in content_id:
+                        content_id = content_id.split(char)[0]
+                        logger.debug(f"After removing query params ('{char}'): {content_id}")
+                
+                # 2. Agar end me '.m3u8' hai toh use hatao
+                if content_id.endswith('.m3u8'):
+                    content_id = content_id[:-5] # .m3u8 exactly 5 characters ka hota hai
+                    logger.debug(f"After removing trailing .m3u8: {content_id}")
+                # Back-up check agar URL ke beech me kahin string ke sath .m3u8 laga ho
+                elif '.m3u8' in content_id:
+                    content_id = content_id.split('.m3u8')[0]
+                    logger.debug(f"After inline .m3u8 split: {content_id}")
+                
+                logger.info(f"✅ Extracted content ID: {content_id}")
+                return content_id
+        
+        logger.warning("❌ No content ID found in URL")
+        return None
+        
+    except Exception as e:
+        logger.error(f"❌ Error extracting content ID: {e}", exc_info=True)
+        return None
+
+
+
+def get_jw_signed_url(content_id, access_token):
+    url = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?contentId={urllib.parse.quote(content_id, safe='')}"
+
+    headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en",
+        "Origin": "https://web.classplusapp.com",
+        "Referer": "https://web.classplusapp.com/",
+        "Region": "IN",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+        "X-Access-Token": access_token,
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        data = response.json()
+
+        print(f"[JW] Status : {response.status_code}")
+        print(f"[JW] Response : {data}")
+
+        final_url = data.get("url")
+        print(f"[JW] URL : {final_url}")
+
+        return final_url
+
+    except Exception as e:
+        print(f"[JW] Error : {e}")
+        return None
 
 # --------------------------------------------
         
@@ -235,9 +311,9 @@ async def txt_handler(bot: Client, m: Message):
     await input4.delete(True)
 
     if raw_text4 == 'unknown':
-        MR = token
+        access_token = token
     else:
-        MR = raw_text4
+        access_token = raw_text4
 
     await editable.edit("Now send the **Thumb url**\n**Eg :** ``\n\nor Send `no`")
     input6 = message = await bot.listen(editable.chat.id)
@@ -274,17 +350,14 @@ async def txt_handler(bot: Client, m: Message):
                         text = await resp.text()
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
 
-            elif 'videos.classplusapp' in url or "tencdn.classplusapp" in url or "webvideos.classplusapp.com" in url or "media-cdn-alisg.classplusapp.com" in url or "videos.classplusapp" in url or "videos.classplusapp.com" in url or "media-cdn-a.classplusapp" in url or "media-cdn.classplusapp" in url:
-             url = requests.get(f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', headers={'x-access-token': 'eyJjb3Vyc2VJZCI6IjQ1NjY4NyIsInR1dG9ySWQiOm51bGwsIm9yZ0lkIjo0ODA2MTksImNhdGVnb3J5SWQiOm51bGx9r'}).json()['url']
+            elif 'https://contentId=' in url or 'contentHashIdl=' in url:
+                content_id = extract_content_id(url)
+                cpurl = get_jw_signed_url(content_id, access_token)
+                print(f"Fetched URL: {cpurl}") # Debugging ke liye
+                url = cpurl
+                print(f"CP Url: {url}")
+                
 
-            
-            #elif '/master.mpd' in url:
-             #id =  url.split("/")[-2]
-             #url = f"https://player.muftukmall.site/?id={id}"
-            #elif '/master.mpd' in url:
-             #id =  url.split("/")[-2]
-             #url = f"https://anonymouspwplayerrrr-c95d81521328.herokuapp.com/pw?url={url}&token={raw_text4}"
-            #url = f"https://madxapi-d0cbf6ac738c.herokuapp.com/{id}/master.m3u8?token={raw_text4}"
             elif"d1d34p8vz63oiq" in url or "sec1.pw.live" in url:
              url = f"https://anonymouspwplayerrrr-c95d81521328.herokuapp.com/pw?url={url}&token={raw_text4}"
                      
@@ -385,22 +458,10 @@ async def txt_handler(bot: Client, m: Message):
                         continue                       
                           
                 else:
-                    Show = f"""❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊
-
-📄 𝐓𝐢𝐭𝐥𝐞 » `{name}`
-
-⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2}
-
-<a href="{url}">🤖Hello » ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  🤗
-
-😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk
-
-<blockquote>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</blockquote>"""
+                    Show = f"❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
-
                     res_file = await helper.download_video(url, cmd, name)
                     filename = res_file
-
                     print("Input file:", filename)
 
                     if WM != "/d":
@@ -503,6 +564,17 @@ async def txt_handler(bot: Client, m: Message):
         CR = credit
     else:
         CR = raw_text3
+
+    
+    await editable.edit("**Enter Your PW Token For 𝐌𝐏𝐃 𝐔𝐑𝐋 or send '3' for use default**")
+    input4: Message = await bot.listen(editable.chat.id)
+    raw_text4 = input4.text
+    await input4.delete(True)
+
+    if raw_text4 == 'unknown':
+        access_token = token
+    else:
+        access_token = raw_text4
         
        
     await editable.edit("Now send the **Thumb url**\n**Eg :** ``\n\nor Send `no`")
@@ -540,22 +612,13 @@ async def txt_handler(bot: Client, m: Message):
                         text = await resp.text()
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
 
-            elif 'videos.classplusapp' in url or "tencdn.classplusapp" in url or "webvideos.classplusapp.com" in url or "media-cdn-alisg.classplusapp.com" in url or "videos.classplusapp" in url or "videos.classplusapp.com" in url or "media-cdn-a.classplusapp" in url or "media-cdn.classplusapp" in url:
-             url = requests.get(f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', headers={'x-access-token': 'eyJjb3Vyc2VJZCI6IjQ1NjY4NyIsInR1dG9ySWQiOm51bGwsIm9yZ0lkIjo0ODA2MTksImNhdGVnb3J5SWQiOm51bGx9r'}).json()['url']
-
-            elif "apps-s3-jw-prod.utkarshapp.com" in url:
-                if 'enc_plain_mp4' in url:
-                    url = url.replace(url.split("/")[-1], res+'.mp4')
-                    
-                elif 'Key-Pair-Id' in url:
-                    url = None
-                    
-                elif '.m3u8' in url:
-                    q = ((m3u8.loads(requests.get(url).text)).data['playlists'][1]['uri']).split("/")[0]
-                    x = url.split("/")[5]
-                    x = url.replace(x, "")
-                    url = ((m3u8.loads(requests.get(url).text)).data['playlists'][1]['uri']).replace(q+"/", x)
-                    
+            elif 'https://contentId=' in url or 'contentHashIdl=' in url:
+                content_id = extract_content_id(url)
+                cpurl = get_jw_signed_url(content_id, access_token)
+                print(f"Fetched URL: {cpurl}") # Debugging ke liye
+                url = cpurl
+                print(f"CP Url: {url}")
+                
             elif '/master.mpd' in url:
              vid_id =  url.split("/")[-2]
              url =  f"https://pw-url-api-v1mf.onrender.com/process?v=https://sec1.pw.live/{vid_id}/master.mpd&quality={raw_text2}"
@@ -677,6 +740,6 @@ async def txt_handler(bot: Client, m: Message):
 
 
 
-bot.run()
+
 if __name__ == "__main__":
     bot.run()
