@@ -170,7 +170,7 @@ def get_jw_signed_url(content_id, access_token):
         print(f"[JW] Error : {e}")
         return None
 
-async def stream_video(url, name):
+async def videostream(url, name):
     cmd = (
         f'yt-dlp '
         f'--socket-timeout 60 '
@@ -202,7 +202,59 @@ async def stream_video(url, name):
             return f
 
     return None
+async def stream_video(url, name):
+    # Priority 1: <=480p | Priority 2 (Fallback): <=720p
+    cmd = (
+        f'yt-dlp '
+        f'--newline '  
+        f'--socket-timeout 140 '
+        f'--retries infinite '
+        f'--fragment-retries infinite '
+        f'--concurrent-fragments 8 '
+        f'--skip-unavailable-fragments '
+        f'--add-header "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" '
+        f'--merge-output-format mp4 '
+        f'-f "(bv*[height<=480]+ba/b[height<=480]) / (bv*[height<=720]+ba/b[height<=720])" ' 
+        f'-o "{name}.%(ext)s" '
+        f'"{url}"'
+    )
 
+    print(f"Starting Download Command: {cmd}\n")
+
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env
+    )
+
+    async def read_stream(stream, prefix):
+        while True:
+            line = await stream.readline()
+            if not line:
+                break
+            print(f"[{prefix}] {line.decode(errors='ignore').strip()}")
+
+    await asyncio.gather(
+        read_stream(process.stdout, "DOWNLOAD"),
+        read_stream(process.stderr, "ERROR")
+    )
+
+    await process.wait()
+
+    base = os.path.splitext(name)[0]
+    for ext in ("mp4", "mkv", "webm"):
+        file = f"{base}.{ext}"
+        if os.path.exists(file):
+            print(f"\n[SUCCESS] File downloaded successfully: {file}")
+            return file
+
+    print("\n[FAILED] File could not be downloaded or found.")
+    return None
+    
 # --------------------------------------------
         
 class Data:
@@ -447,7 +499,26 @@ async def txt_handler(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
-                
+
+                elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
+                    try:
+                        await asyncio.sleep(2)
+                        downloaded_pdf = await helper.download_secure_pdf(url, name)
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id,
+                                document=downloaded_pdf,
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ Appx PDF download fail ho gaya.")
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
                             
                 elif ".pdf" in url:
                     try:
@@ -528,25 +599,7 @@ async def txt_handler(bot: Client, m: Message):
                         count += 1
                         continue
                         
-                elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
-                    try:
-                        await asyncio.sleep(2)
-                        downloaded_pdf = await helper.download_secure_pdf(url, name)
-                        if downloaded_pdf and os.path.exists(downloaded_pdf):
-                            copy = await bot.send_document(
-                                chat_id=m.chat.id,
-                                document=downloaded_pdf,
-                                caption=cc1
-                            )
-                            count += 1
-                            os.remove(downloaded_pdf)
-                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
-                        else:
-                            await m.reply_text(f"❌ Appx PDF download fail ho gaya.")
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        await asyncio.sleep(e.x)
-                        continue
+                
                     
                 elif "transcoded-videos.classx.co.in" in url.lower() or "classx.co.in" in url.lower():
                     Show = f"<pre><code></code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
