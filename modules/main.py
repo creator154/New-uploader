@@ -27,6 +27,14 @@ from pyrogram.errors.exceptions.bad_request_400 import StickerEmojiInvalid
 from pyrogram.types.messages_and_media import message
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Initialize the bot
 bot = Client(
     "bot",
@@ -95,12 +103,27 @@ async def main():
     finally:
         await stop_bot()
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
+import os
+import subprocess
+
+def pwdlx_video(url: str, output_filename: str):
+    cmd = [
+        "yt-dlp",
+        "--newline",
+        "--merge-output-format", "mp4",
+        "--remux-video", "mp4",
+        "--concurrent-fragments", "8",
+        "--downloader", "aria2c",
+        "--downloader-args",
+        "aria2c:-x16 -s16 -k1M -j16 --file-allocation=none",
+        "-o", output_filename,
+        url,
+    ]
+
+    subprocess.run(cmd, check=True)
+    return output_filename
+    
 def extract_content_id(url):
     """URL se content ID extract karega with precise debugging"""
     logger.debug(f"extract_content_id called with URL: {url}")
@@ -444,11 +467,11 @@ async def txt_handler(bot: Client, m: Message):
                 print(f"CP Url: {url}")
                 
 
-            elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                vid_id = url.split("/")[-2]
-                url = f"https://stream.pimaxer.in/{vid_id}/master.m3u8"
-                print(vid_id)
-                print(url)
+            elif '/master.mpd' in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
+                if "parentId=" in url or "childId=" in url:
+                    url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&token={raw_text4}&quality={raw_text2}"
+                else:
+                    url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&quality={raw_text2}"
                                                          
             name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             name = f'{str(count).zfill(3)}) {name1[:60]} {my_name}'
@@ -613,10 +636,11 @@ async def txt_handler(bot: Client, m: Message):
                     continue
 
 
-                elif "stream.pimaxer.in" in url.lower():
+                elif '/master.mpd' in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                     Show = f"<pre><code>Physics Wallah</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
-                    res_file = await stream_video(url, name)
+                    output_filename = f"{name}.mp4"
+                    res_file = pwdlx_video(url, output_filename)
                     filename = res_file
                     await prog.delete(True)
                     await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
