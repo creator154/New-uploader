@@ -58,6 +58,7 @@ async def web_server():
     web_app = web.Application(client_max_size=30000000)
     web_app.add_routes(routes)
     return web_app
+
 my_name = "ZX"
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
@@ -193,90 +194,6 @@ def get_jw_signed_url(content_id, access_token):
         print(f"[JW] Error : {e}")
         return None
 
-async def videostream(url, name):
-    cmd = (
-        f'yt-dlp '
-        f'--socket-timeout 60 '
-        f'--retries 30 '
-        f'--fragment-retries 30 '
-        f'--concurrent-fragments 16 '
-        f'--external-downloader aria2c '
-        f'--downloader-args "aria2c:-x16 -j16 -s16 -k1M --file-allocation=none --summary-interval=0 --connect-timeout=60 --timeout=60" '
-        f'--add-header "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" '
-        f'-f "bv[height<=480]+ba/b[height<=480]" '
-        f'--merge-output-format mp4 '
-        f'-o "{name}.%(ext)s" '
-        f'"{url}"'
-    )
-
-    print(cmd)
-
-    process = await asyncio.create_subprocess_shell(cmd)
-    await process.wait()
-
-    base = os.path.splitext(name)[0]
-
-    for f in (
-        f"{base}.mp4",
-        f"{base}.mkv",
-        f"{base}.webm",
-    ):
-        if os.path.exists(f):
-            return f
-
-    return None
-async def stream_video(url, name):
-    # Priority 1: <=480p | Priority 2 (Fallback): <=720p
-    cmd = (
-        f'yt-dlp '
-        f'--newline '  
-        f'--socket-timeout 140 '
-        f'--retries infinite '
-        f'--fragment-retries infinite '
-        f'--concurrent-fragments 8 '
-        f'--skip-unavailable-fragments '
-        f'--add-header "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" '
-        f'--merge-output-format mp4 '
-        f'-f "(bv*[height<=480]+ba/b[height<=480]) / (bv*[height<=720]+ba/b[height<=720])" ' 
-        f'-o "{name}.%(ext)s" '
-        f'"{url}"'
-    )
-
-    print(f"Starting Download Command: {cmd}\n")
-
-    env = os.environ.copy()
-    env["PYTHONUNBUFFERED"] = "1"
-
-    process = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        env=env
-    )
-
-    async def read_stream(stream, prefix):
-        while True:
-            line = await stream.readline()
-            if not line:
-                break
-            print(f"[{prefix}] {line.decode(errors='ignore').strip()}")
-
-    await asyncio.gather(
-        read_stream(process.stdout, "DOWNLOAD"),
-        read_stream(process.stderr, "ERROR")
-    )
-
-    await process.wait()
-
-    base = os.path.splitext(name)[0]
-    for ext in ("mp4", "mkv", "webm"):
-        file = f"{base}.{ext}"
-        if os.path.exists(file):
-            print(f"\n[SUCCESS] File downloaded successfully: {file}")
-            return file
-
-    print("\n[FAILED] File could not be downloaded or found.")
-    return None
     
 # --------------------------------------------
         
@@ -642,6 +559,19 @@ async def txt_handler(bot: Client, m: Message):
                     output_filename = f"{name}.mp4"
                     res_file = pwdlx_video(url, output_filename)
                     filename = res_file
+                    if WM != "/d":
+                        wm_file = f"wm_{filename}"
+
+                        os.system(
+                            f'''ffmpeg -y -i "{filename}" -vf "drawtext=text='{WM}':fontcolor=white:fontsize=30:borderw=2:bordercolor=black:x=mod(t*120\\,(w-text_w)):y=mod(t*70\\,(h-text_h))" -codec:a copy "{wm_file}"'''
+                        )
+
+                        print("Watermark file exists:", os.path.exists(wm_file))
+
+                        if os.path.exists(wm_file):
+                            os.remove(filename)
+                            filename = wm_file
+                            
                     await prog.delete(True)
                     await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
                     count += 1
