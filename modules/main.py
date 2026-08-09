@@ -390,7 +390,9 @@ async def txt_handler(bot: Client, m: Message):
                     url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&token={raw_text4}&quality={raw_text2}"
                 if "p01--streamthorr--8zqnnv98yzb8.code.run" in url:
                     if "/dash/" in url:
-                        url = re.sub(r'/dash/[^?]*?(?:\?.*)?$', '/master.m3u8', url)
+                        new_url = re.sub(r'/dash/[^?]*?(?:\?.*)?$', '/master.m3u8', url)
+                        print(new_url)
+                        url = new_url
                         print(url)
                 else:
                     url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&quality={raw_text2}"
@@ -558,7 +560,7 @@ async def txt_handler(bot: Client, m: Message):
                     continue
 
 
-                elif '/master.mpd' in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
+                elif '/master.mpd' in url or "code.run" in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                     Show = f"<pre><code>Physics Wallah</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
