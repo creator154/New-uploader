@@ -384,9 +384,14 @@ async def txt_handler(bot: Client, m: Message):
                 print(f"CP Url: {url}")
                 
 
+            
             elif '/master.mpd' in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 if "parentId=" in url or "childId=" in url:
                     url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&token={raw_text4}&quality={raw_text2}"
+                if "p01--streamthorr--8zqnnv98yzb8.code.run" in url:
+                    if "/dash/" in url:
+                        url = re.sub(r'/dash/[^?]*?(?:\?.*)?$', '/master.m3u8', url)
+                        print(url)
                 else:
                     url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&quality={raw_text2}"
                                                          
