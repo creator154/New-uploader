@@ -384,7 +384,9 @@ async def txt_handler(bot: Client, m: Message):
                 print(f"CP Url: {url}")
                 
 
-            
+            elif "/index_6.m3u8?" in url:
+                url = f"https://ankitshakyaxapi.vercel.app//api/pwlive/download?url={url}"
+                print(url)
             elif '/master.mpd' in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 if "parentId=" in url or "childId=" in url:
                     url = f"https://ankitshakyaxapi.vercel.app/download?mpd_url={url}&token={raw_text4}&quality={raw_text2}"
