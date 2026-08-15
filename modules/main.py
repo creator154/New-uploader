@@ -613,7 +613,7 @@ async def txt_handler(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
                         
-                elif "*" in url:
+                elif ".pdf*" in url:
                     try:
                         # URL se key split karein (URL*KEY format check)
                         enc_key = ""
