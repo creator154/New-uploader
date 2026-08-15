@@ -194,7 +194,105 @@ def get_jw_signed_url(content_id, access_token):
         print(f"[JW] Error : {e}")
         return None
 
-    
+
+def download_classplus_cdn(url, output_filename, raw_text2):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/139.0.0.0 Safari/537.36"
+        ),
+        "Accept": "*/*",
+        "Origin": "https://web.classplusapp.com",
+        "Referer": "https://web.classplusapp.com/",
+    }
+
+    try:
+        print("[CDN] Fetching M3U8...")
+
+        r = requests.get(
+            url,
+            headers=headers,
+            timeout=20
+        )
+
+        print(f"[CDN] Status : {r.status_code}")
+        r.raise_for_status()
+
+        playlist = r.text
+
+        lines = [
+            x.strip()
+            for x in playlist.splitlines()
+            if x.strip()
+        ]
+
+        variant_url = None
+
+        for i, line in enumerate(lines):
+            if not line.startswith("#EXT-X-STREAM-INF"):
+                continue
+
+            if i + 1 >= len(lines):
+                continue
+
+            next_line = lines[i + 1]
+
+            if raw_text2 == "720" and "1280x720" in line:
+                variant_url = urljoin(url, next_line)
+                break
+
+            if raw_text2 == "480" and "854x480" in line:
+                variant_url = urljoin(url, next_line)
+                break
+
+            if raw_text2 == "240" and "426x240" in line:
+                variant_url = urljoin(url, next_line)
+                break
+
+        if not variant_url:
+            print(f"[!] {raw_text2}p variant not found")
+            return False
+
+        print(f"[+] Selected: {raw_text2}p")
+        print(f"[+] Variant URL: {variant_url}")
+
+        ffmpeg_headers = (
+            f"User-Agent: {headers['User-Agent']}\r\n"
+            "Accept: */*\r\n"
+            "Origin: https://web.classplusapp.com\r\n"
+            "Referer: https://web.classplusapp.com/\r\n"
+        )
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-headers",
+            ffmpeg_headers,
+            "-i",
+            variant_url,
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            output_filename
+        ]
+
+        print("[FFMPEG] Downloading...")
+
+        result = subprocess.run(command)
+
+        if result.returncode == 0:
+            print(f"[+] Done: {output_filename}")
+            return True
+
+        print(f"[!] FFmpeg failed: {result.returncode}")
+        return False
+
+    except Exception as e:
+        print(f"[!] Download Error: {e}")
+        return False
+
 # --------------------------------------------
         
 class Data:
@@ -562,6 +660,31 @@ async def txt_handler(bot: Client, m: Message):
                     continue
 
 
+                elif 'akamai-cdn.classplusapp.com' in url:
+                    Show = f"<pre><code>Class Plus</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
+                    prog = await m.reply_text(Show)
+                    output_filename = f"{name}.mp4"
+                    res_file = download_classplus_cdn(url, output_filename, raw_text2)
+                    filename = res_file
+                    if WM != "/d":
+                        wm_file = f"wm_{filename}"
+
+                        os.system(
+                            f'''ffmpeg -y -i "{filename}" -vf "drawtext=text='{WM}':fontcolor=white:fontsize=30:borderw=2:bordercolor=black:x=mod(t*120\\,(w-text_w)):y=mod(t*70\\,(h-text_h))" -codec:a copy "{wm_file}"'''
+                        )
+
+                        print("Watermark file exists:", os.path.exists(wm_file))
+
+                        if os.path.exists(wm_file):
+                            os.remove(filename)
+                            filename = wm_file
+                            
+                    await prog.delete(True)
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
+                    continue
+
                 elif '/master.mpd' in url or "code.run" in url or "/dash/" in url or ".mp4?" in url or "?Signature=" in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                     Show = f"<pre><code>Physics Wallah</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
@@ -838,7 +961,20 @@ async def txt_handler(bot: Client, m: Message):
                         await m.reply_text(str(e))
                         time.sleep(e.x)
                         continue                       
-                          
+
+                elif 'akamai-cdn.classplusapp.com' in url:
+                    Show = f"<pre><code>Class Plus</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
+                    prog = await m.reply_text(Show)
+                    output_filename = f"{name}.mp4"
+                    res_file = download_classplus_cdn(url, output_filename, raw_text2)
+                    filename = res_file
+                    await prog.delete(True)
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
+                    continue
+
+                
                 else:
                     Show = f"""❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊
 
