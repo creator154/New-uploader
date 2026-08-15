@@ -193,170 +193,36 @@ def get_jw_signed_url(content_id, access_token):
 
 
 def new_classplus_cdn(url, raw_text2, output_filename):
-    m3u8_url = url
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Linux x86_64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/139.0.0.0 Safari/537.36"
-        ),
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Origin": "https://web.classplusapp.com",
-        "Referer": "https://web.classplusapp.com/",
-    }
+    format_selector = (
+        f"bestvideo[height<={raw_text2}]"
+        f"+bestaudio/best[height<={raw_text2}]"
+    )
 
-    try:
-        # Fresh signed master ko immediately fetch karo
-        print("\n[CDN] Fetching fresh master M3U8...")
+    cmd = [
+        "yt-dlp",
+        "--newline",
+        "-f", format_selector,
+        "--merge-output-format", "mp4",
+        "--remux-video", "mp4",
+        "--concurrent-fragments", "8",
+        "--downloader", "aria2c",
+        "--downloader-args",
+        "aria2c:-x16 -s16 -k1M -j16 --file-allocation=none",
 
-        r = requests.get(
-            m3u8_url,
-            headers=headers,
-            timeout=20
-        )
+        "--add-header",
+        "Origin: https://web.classplusapp.com",
 
-        print(f"[CDN] Status : {r.status_code}")
+        "--add-header",
+        "Referer: https://web.classplusapp.com/",
 
-        if r.status_code != 200:
-            print(r.text[:1000])
-            return False
+        "-o",
+        output_filename,
+        url,
+    ]
 
-        master_text = r.text
+    subprocess.run(cmd, check=True)
 
-        with open("master.m3u8", "w", encoding="utf-8") as f:
-            f.write(master_text)
-
-        print("[+] Master playlist saved")
-
-        # --------------------------------
-        # Quality variant find
-        # --------------------------------
-
-        lines = [
-            line.strip()
-            for line in master_text.splitlines()
-            if line.strip()
-        ]
-
-        variant_url = None
-
-        for i, line in enumerate(lines):
-
-            if not line.startswith("#EXT-X-STREAM-INF"):
-                continue
-
-            if i + 1 >= len(lines):
-                continue
-
-            next_line = lines[i + 1]
-
-            if raw_text2 == "720" and "1280x720" in line:
-                variant_url = urljoin(
-                    m3u8_url,
-                    next_line
-                )
-                break
-
-            if raw_text2 == "480" and "854x480" in line:
-                variant_url = urljoin(
-                    m3u8_url,
-                    next_line
-                )
-                break
-
-            if raw_text2 == "240" and "426x240" in line:
-                variant_url = urljoin(
-                    m3u8_url,
-                    next_line
-                )
-                break
-
-        if not variant_url:
-            print(f"[!] {raw_text2}p variant not found")
-            return False
-
-        print(f"\n[+] Quality : {raw_text2}p")
-        print(f"[+] Variant URL:\n{variant_url}")
-
-        # --------------------------------
-        # Variant playlist check
-        # --------------------------------
-
-        vr = requests.get(
-            variant_url,
-            headers=headers,
-            timeout=20
-        )
-
-        print(f"\n[VARIANT] Status : {vr.status_code}")
-
-        if vr.status_code != 200:
-            print(vr.text[:1000])
-            return False
-
-        with open(
-            f"{raw_text2}p.m3u8",
-            "w",
-            encoding="utf-8"
-        ) as f:
-            f.write(vr.text)
-
-        print(f"[+] Saved: {raw_text2}p.m3u8")
-
-        # --------------------------------
-        # FFmpeg
-        # --------------------------------
-
-        ffmpeg_headers = (
-            f"User-Agent: {headers['User-Agent']}\r\n"
-            "Accept: */*\r\n"
-            "Origin: https://web.classplusapp.com\r\n"
-            "Referer: https://web.classplusapp.com/\r\n"
-        )
-
-        command = [
-            "ffmpeg",
-            "-y",
-            "-headers",
-            ffmpeg_headers,
-            "-i",
-            variant_url,
-            "-c",
-            "copy",
-            "-movflags",
-            "+faststart",
-            output_filename
-        ]
-
-        print("\n[FFMPEG] Starting download...\n")
-
-        result = subprocess.run(command)
-
-        if result.returncode == 0:
-            print("\n[+] Download completed!")
-            print(f"[+] File: {output_filename}")
-            return True
-
-        print(
-            f"\n[!] FFmpeg failed: "
-            f"{result.returncode}"
-        )
-        return False
-
-    except requests.RequestException as e:
-        print(f"[!] CDN Error: {e}")
-        return False
-
-    except FileNotFoundError:
-        print("[!] FFmpeg not installed")
-        print("Run: pkg install ffmpeg -y")
-        return False
-
-    except Exception as e:
-        print(f"[!] Download Error: {e}")
-        return False
-
+    return output_filename
 
 # --------------------------------------------
         
