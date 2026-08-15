@@ -19,7 +19,7 @@ from pyromod import listen
 from subprocess import getstatusoutput
 from pytube import YouTube
 from aiohttp import web
-
+from urllib.parse import quote, urljoin
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
@@ -29,10 +29,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+
 logger = logging.getLogger(__name__)
 
 # Initialize the bot
@@ -127,31 +124,31 @@ def pwdlx_video(url: str, output_filename: str):
     
 def extract_content_id(url):
     """URL se content ID extract karega with precise debugging"""
-    logger.debug(f"extract_content_id called with URL: {url}")
+    logger.info(f"extract_content_id called with URL: {url}")
     
     try:
         if 'contentId=' in url:
-            logger.debug("Found 'contentId=' in URL")
+            logger.info("Found 'contentId=' in URL")
             parts = url.split('contentId=')
             
             if len(parts) > 1:
                 content_id = parts[1]
-                logger.debug(f"Initial split content ID: {content_id}")
+                logger.info(f"Initial split content ID: {content_id}")
                 
                 # 1. URL parameters ('?' ya '&') se split karein taaki baaki ka URL hat jaye
                 for char in ['?', '&']:
                     if char in content_id:
                         content_id = content_id.split(char)[0]
-                        logger.debug(f"After removing query params ('{char}'): {content_id}")
+                        logger.info(f"After removing query params ('{char}'): {content_id}")
                 
                 # 2. Agar end me '.m3u8' hai toh use hatao
                 if content_id.endswith('.m3u8'):
                     content_id = content_id[:-5] # .m3u8 exactly 5 characters ka hota hai
-                    logger.debug(f"After removing trailing .m3u8: {content_id}")
+                    logger.info(f"After removing trailing .m3u8: {content_id}")
                 # Back-up check agar URL ke beech me kahin string ke sath .m3u8 laga ho
                 elif '.m3u8' in content_id:
                     content_id = content_id.split('.m3u8')[0]
-                    logger.debug(f"After inline .m3u8 split: {content_id}")
+                    logger.info(f"After inline .m3u8 split: {content_id}")
                 
                 logger.info(f"✅ Extracted content ID: {content_id}")
                 return content_id
@@ -195,7 +192,8 @@ def get_jw_signed_url(content_id, access_token):
         return None
 
 
-def download_classplus_cdn(url, output_filename, raw_text2):
+def new_classplus_cdn(url, raw_text2, output_filename):
+    m3u8_url = url
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (X11; Linux x86_64) "
@@ -203,33 +201,48 @@ def download_classplus_cdn(url, output_filename, raw_text2):
             "Chrome/139.0.0.0 Safari/537.36"
         ),
         "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
         "Origin": "https://web.classplusapp.com",
         "Referer": "https://web.classplusapp.com/",
     }
 
     try:
-        print("[CDN] Fetching M3U8...")
+        # Fresh signed master ko immediately fetch karo
+        print("\n[CDN] Fetching fresh master M3U8...")
 
         r = requests.get(
-            url,
+            m3u8_url,
             headers=headers,
             timeout=20
         )
 
         print(f"[CDN] Status : {r.status_code}")
-        r.raise_for_status()
 
-        playlist = r.text
+        if r.status_code != 200:
+            print(r.text[:1000])
+            return False
+
+        master_text = r.text
+
+        with open("master.m3u8", "w", encoding="utf-8") as f:
+            f.write(master_text)
+
+        print("[+] Master playlist saved")
+
+        # --------------------------------
+        # Quality variant find
+        # --------------------------------
 
         lines = [
-            x.strip()
-            for x in playlist.splitlines()
-            if x.strip()
+            line.strip()
+            for line in master_text.splitlines()
+            if line.strip()
         ]
 
         variant_url = None
 
         for i, line in enumerate(lines):
+
             if not line.startswith("#EXT-X-STREAM-INF"):
                 continue
 
@@ -239,23 +252,61 @@ def download_classplus_cdn(url, output_filename, raw_text2):
             next_line = lines[i + 1]
 
             if raw_text2 == "720" and "1280x720" in line:
-                variant_url = urljoin(url, next_line)
+                variant_url = urljoin(
+                    m3u8_url,
+                    next_line
+                )
                 break
 
             if raw_text2 == "480" and "854x480" in line:
-                variant_url = urljoin(url, next_line)
+                variant_url = urljoin(
+                    m3u8_url,
+                    next_line
+                )
                 break
 
             if raw_text2 == "240" and "426x240" in line:
-                variant_url = urljoin(url, next_line)
+                variant_url = urljoin(
+                    m3u8_url,
+                    next_line
+                )
                 break
 
         if not variant_url:
             print(f"[!] {raw_text2}p variant not found")
             return False
 
-        print(f"[+] Selected: {raw_text2}p")
-        print(f"[+] Variant URL: {variant_url}")
+        print(f"\n[+] Quality : {raw_text2}p")
+        print(f"[+] Variant URL:\n{variant_url}")
+
+        # --------------------------------
+        # Variant playlist check
+        # --------------------------------
+
+        vr = requests.get(
+            variant_url,
+            headers=headers,
+            timeout=20
+        )
+
+        print(f"\n[VARIANT] Status : {vr.status_code}")
+
+        if vr.status_code != 200:
+            print(vr.text[:1000])
+            return False
+
+        with open(
+            f"{raw_text2}p.m3u8",
+            "w",
+            encoding="utf-8"
+        ) as f:
+            f.write(vr.text)
+
+        print(f"[+] Saved: {raw_text2}p.m3u8")
+
+        # --------------------------------
+        # FFmpeg
+        # --------------------------------
 
         ffmpeg_headers = (
             f"User-Agent: {headers['User-Agent']}\r\n"
@@ -278,20 +329,34 @@ def download_classplus_cdn(url, output_filename, raw_text2):
             output_filename
         ]
 
-        print("[FFMPEG] Downloading...")
+        print("\n[FFMPEG] Starting download...\n")
 
         result = subprocess.run(command)
 
         if result.returncode == 0:
-            print(f"[+] Done: {output_filename}")
+            print("\n[+] Download completed!")
+            print(f"[+] File: {output_filename}")
             return True
 
-        print(f"[!] FFmpeg failed: {result.returncode}")
+        print(
+            f"\n[!] FFmpeg failed: "
+            f"{result.returncode}"
+        )
+        return False
+
+    except requests.RequestException as e:
+        print(f"[!] CDN Error: {e}")
+        return False
+
+    except FileNotFoundError:
+        print("[!] FFmpeg not installed")
+        print("Run: pkg install ffmpeg -y")
         return False
 
     except Exception as e:
         print(f"[!] Download Error: {e}")
         return False
+
 
 # --------------------------------------------
         
@@ -664,7 +729,7 @@ async def txt_handler(bot: Client, m: Message):
                     Show = f"<pre><code>Class Plus</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
-                    res_file = download_classplus_cdn(url, output_filename, raw_text2)
+                    res_file = new_classplus_cdn(url, raw_text2, output_filename)
                     filename = res_file
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
@@ -966,7 +1031,7 @@ async def txt_handler(bot: Client, m: Message):
                     Show = f"<pre><code>Class Plus</code></pre>\n\n🚀❊━━━⟱ 🚀𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐢𝐧𝐠🚀 ⟱━━━❊\n\n 📄 𝐓𝐢𝐭𝐥𝐞 » `{name}\n\n`⌨ 𝐐𝐮𝐚𝐥𝐢𝐭𝐲 » {raw_text2} \n **Url »** ᴜʀʟ ᴅᴇᴋʜ ᴋᴀʀ ᴋʏᴀ ᴋᴀʀᴏɢᴇ  \n🤗😎 𝐂𝐨𝐧𝐭𝐚𝐜𝐭 𝐌𝐲 𝐁𝐨𝐬𝐬 » @jaat_mk \n\n<code><pre>━━━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━━━</pre></code>"
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
-                    res_file = download_classplus_cdn(url, output_filename, raw_text2)
+                    res_file = new_classplus_cdn(url, raw_text2, output_filename)
                     filename = res_file
                     await prog.delete(True)
                     await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
