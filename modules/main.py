@@ -7,6 +7,7 @@ import asyncio
 import requests
 import subprocess
 import urllib.parse
+from urllib.parse import quote, urlparse
 import logging
 import yt_dlp
 import cloudscraper
@@ -162,8 +163,7 @@ def extract_content_id(url):
 
 
 
-def get_jw_signed_url(content_id, access_token):
-    url = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?contentId={urllib.parse.quote(content_id, safe='')}"
+def get_jw_signed_url(content_id, access_token)
 
     headers = {
         "Accept": "application/json, text/plain, */*",
@@ -171,25 +171,69 @@ def get_jw_signed_url(content_id, access_token):
         "Origin": "https://web.classplusapp.com",
         "Referer": "https://web.classplusapp.com/",
         "Region": "IN",
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0",
         "X-Access-Token": access_token,
     }
 
-    try:
-        response = requests.get(url, headers=headers, timeout=15)
-        data = response.json()
+    # 1. First try: contentId
+    content_api = (
+        "https://api.classplusapp.com/cams/uploader/video/"
+        f"jw-signed-url?contentId={quote(content_id, safe='')}"
+    )
 
-        print(f"[JW] Status : {response.status_code}")
-        print(f"[JW] Response : {data}")
+    print("[1] Trying contentId...")
 
-        final_url = data.get("url")
-        print(f"[JW] URL : {final_url}")
+    r = requests.get(
+        content_api,
+        headers=headers,
+        timeout=15
+    )
 
-        return final_url
+    print(f"[CONTENT] Status: {r.status_code}")
 
-    except Exception as e:
-        print(f"[JW] Error : {e}")
+    if r.ok:
+        data = r.json()
+        signed_url = data.get("url")
+
+        if signed_url:
+            hostname = (urlparse(signed_url).hostname or "").lower()
+
+            print(f"[CONTENT] Host: {hostname}")
+
+            # Akamai URL → directly use it
+            if hostname == "akamai-cdn.classplusapp.com":
+                print("[+] Akamai signed URL found")
+                return signed_url
+
+    # 2. Fallback: same ID as liveSessionId
+    print("[2] Content URL not Akamai")
+    print("[+] Trying liveSessionId API...")
+
+    live_api = (
+        "https://api.classplusapp.com/cams/uploader/video/"
+        f"jw-signed-url?liveSessionId={quote(content_id, safe='')}"
+        "&isAgora=2"
+    )
+
+    r = requests.get(
+        live_api,
+        headers=headers,
+        timeout=15
+    )
+
+    print(f"[LIVE] Status: {r.status_code}")
+    r.raise_for_status()
+
+    data = r.json()
+    signed_url = data.get("url")
+
+    if not signed_url:
+        print("[!] Live signed URL not found")
         return None
+
+    print("[+] Live signed URL received")
+
+    return signed_url
 
 
 def new_classplus_cdn(url, raw_text2, output_filename):
