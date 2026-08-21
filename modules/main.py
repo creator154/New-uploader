@@ -163,7 +163,7 @@ def extract_content_id(url):
 
 
 
-def get_jw_signed_url(content_id, access_token)
+def get_jw_signed_url(content_id, access_token):
 
     headers = {
         "Accept": "application/json, text/plain, */*",
