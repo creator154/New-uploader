@@ -356,7 +356,7 @@ async def txt_handler(bot: Client, m: Message):
         arg = int(raw_text)
     except:
         arg = 1
-    await editable.edit("**Enter Your Batch Name or send 1 for grabing from text filename.**")
+    await editable.edit("**Enter Your Batch Name or send Zx for grabing from text filename.**")
     input1: Message = await bot.listen(editable.chat.id)
     raw_text0 = input1.text
     await input1.delete(True)
@@ -395,7 +395,7 @@ async def txt_handler(bot: Client, m: Message):
     await input_wm.delete(True)
     # =====================
 
-    await editable.edit("**Enter Your Name or send '1' for use default.\n Eg : @jaat_mk **")
+    await editable.edit("**Enter Your Name or send 'Zx' for use default.\n Eg : @SumitTripathi **")
     input3: Message = await bot.listen(editable.chat.id)
     raw_text3 = input3.text
     await input3.delete(True)
@@ -404,7 +404,7 @@ async def txt_handler(bot: Client, m: Message):
         CR = credit
     else:
         CR = raw_text3
-    await editable.edit("**Enter Your PW Token For 𝐌𝐏𝐃 𝐔𝐑𝐋 or send '3' for use default**")
+    await editable.edit("**Enter Your PW Token For 𝐌𝐏𝐃 𝐔𝐑𝐋 or send '/Zx' for use default**")
     input4: Message = await bot.listen(editable.chat.id)
     raw_text4 = input4.text
     await input4.delete(True)
@@ -721,7 +721,7 @@ async def txt_handler(bot: Client, m: Message):
     await m.reply_text("𝐄𝐕𝐄𝐑𝐘𝐓𝐇𝐈𝐍𝐆 𝐈𝐒 𝐃𝐎𝐍𝐄 ☑️ ")
 # Advance
 
-@bot.on_message(filters.command(["team9"]) )
+@bot.on_message(filters.command(["/baby"]) )
 async def txt_handler(bot: Client, m: Message):
     editable = await m.reply_text(f"**🔹Hi I am Poweful TXT Downloader📥 Bot.**\n🔹**Send me the TXT file and wait.**")
     input: Message = await bot.listen(editable.chat.id)
@@ -783,7 +783,7 @@ async def txt_handler(bot: Client, m: Message):
     except Exception:
         res = "UN"
 
-    await editable.edit("**Enter Your Name or send '1' for use default.\n Eg : @jaat_mk**")
+    await editable.edit("**Enter Your Name or send '1' for use default.\n Eg : @SumitTripathi**")
     input3: Message = await bot.listen(editable.chat.id)
     raw_text3 = input3.text
     await input3.delete(True)
