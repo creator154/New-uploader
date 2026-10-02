@@ -41,7 +41,7 @@ bot = Client(
     bot_token="8840423294:AAEY5ywsmbUDLYhDqgWs_wVsHPlcCFeh6oI"
 )
 
-my_name = "jaat"
+my_name = "Zx"
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
@@ -57,7 +57,7 @@ async def web_server():
     web_app.add_routes(routes)
     return web_app
 
-my_name = "jaat"
+my_name = "Zx"
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
@@ -316,7 +316,7 @@ async def start(client: Client, msg: Message):
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
         "ᴄʜᴇᴄᴋɪɴɢ ꜱᴛᴀᴛᴜꜱ ᴀᴄᴛɪᴠᴇ... ᴄᴏᴍᴍᴀɴᴅ ᴘᴛᴀ ʜᴀɪ ᴋɪ ɴʜɪ ᴊɪ 🙃\n"
-"ᴄᴏɴᴛᴀᴄᴛ @jaat_mk 🔍\n\n"
+"ᴄᴏɴᴛᴀᴄᴛ @SumitTripathi 🔍\n\n"
 "ᴘʀᴏɢʀᴇꜱꜱ:[🟩🟥🟩🟥🟩🟥🟩🟥🟩] 100%"
     )
 
@@ -326,7 +326,7 @@ async def restart_handler(_, m):
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-@bot.on_message(filters.command(["team8"]) )
+@bot.on_message(filters.command(["baby"]) )
 async def txt_handler(bot: Client, m: Message):
     editable = await m.reply_text(f"**🍁ʜɪ ɪ'ᴍ ᴘᴏᴡᴇʀꜰᴜʟ ᴛxᴛ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ ʙᴏᴛ.**\n🍁**ꜱᴇɴᴅ ᴀ ᴛxᴛ ꜰɪʟᴇ ᴀɴᴅ ʟᴇᴛ ᴛʜᴇ ᴘʀᴏᴄᴇꜱꜱ ʙᴇɢɪɴ...**")
     input: Message = await bot.listen(editable.chat.id)
@@ -497,16 +497,16 @@ async def txt_handler(bot: Client, m: Message):
             try:  
                 
                 cc = f"""**➭ Index » {str(count).zfill(3)}
-➭ Title » {name1} {res}जाटⁱˢß𝐚𝐜𝐤ツ.mkv
+➭ Title » {name1} {res}.mkv
 ➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}
 ➭ Quality » {res}
 
-➭ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 : {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>**"""
+➭ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 : {CR}\n\n<pre><code>━━━━━✦𝗭𝗫✦━━━━━</code></pre>**"""
                 cc1 = f"""**➭ Index » {str(count).zfill(3)}
-➭ Title » {name1}जाटⁱˢß𝐚𝐜𝐤ツ.pdf
+➭ Title » {name1}.pdf
 ➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}
 
-➭ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 : {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>**"""
+➭ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 : {CR}\n\n<pre><code>━━━━━✦𝗭𝗫✦━━━━━</code></pre>**"""
                     
         
                 if "drive" in url:
@@ -875,8 +875,8 @@ async def txt_handler(bot: Client, m: Message):
 
             try:  
         
-                cc = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n🎞️Tɪᴛʟᴇ: {name1} {res}.mkv\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>'
-                cc1 = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n📑Tɪᴛʟᴇ: {name1} .pdf\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>'
+                cc = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n🎞️Tɪᴛʟᴇ: {name1} {res}.mkv\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦𝗭𝗫✦━━━━━</code></pre>'
+                cc1 = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n📑Tɪᴛʟᴇ: {name1} .pdf\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦𝗭𝗫✦━━━━━</code></pre>'
                     
                 
                 if "drive" in url:
