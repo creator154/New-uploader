@@ -30,7 +30,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(name)
 
-Initialize the bot
+# Initialize the bot
 
 bot = Client(
 "bot",
