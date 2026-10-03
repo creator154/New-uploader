@@ -32,7 +32,7 @@ bot = Client(
     "bot",
     api_id=37721193,
     api_hash="ed5cbbc0e14a777e1b2deb0c3f763874",
-    bot_token="8889799148:AAH7AEjpOeC75bD6DO-TpXsyO4Ie35QWu00"
+    bot_token="8889799148:AAHSQ3SwdqxSa2SFHnkxO2oxH93jFVKduTM"
 )
 
 # ---------------- WEB SERVER ----------------
