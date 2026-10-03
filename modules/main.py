@@ -55,23 +55,26 @@ async def web_server():
 
 #---------------- START BOT ----------------
 
+# ---------------- START BOT ----------------
 async def start_bot():
-await bot.start()
-me = await bot.get_me()
-print(f"Bot Started Successfully as @{me.username}")
+    await bot.start()
+    me = await bot.get_me()
+    print(f"Bot Started Successfully as @{me.username}")
 
 async def stop_bot():
-await bot.stop()
+    await bot.stop()
 
 async def main():
-await start_bot()
+    await start_bot()
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    finally:
+        await stop_bot()
 
-try:  
-    while True:  
-        await asyncio.sleep(3600)  
-finally:  
-    await stop_bot()
-
+if __name__ == "__main__":
+    asyncio.run(main())
+    
 import os
 import subprocess
 
