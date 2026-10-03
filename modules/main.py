@@ -53,14 +53,11 @@ async def web_server():
     app.add_routes(routes)
     return app
 
-#---------------- START BOT ----------------
-
 # ---------------- START BOT ----------------
 async def start_bot():
     await bot.start()
     me = await bot.get_me()
     print(f"Bot Started Successfully as @{me.username}")
-
 async def stop_bot():
     await bot.stop()
 
