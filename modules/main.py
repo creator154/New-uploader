@@ -47,22 +47,30 @@ async def web_server():
     app.add_routes(routes)
     return app
 
-# ---------------- START BOT ----------------
-async def start_bot():
+# ---------------- START BOT & WEB SERVER ----------------
+async def main():
+    # Web App Start
+    app = web.AppRunner(await web_server())
+    await app.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(app, "0.0.0.0", port)
+    await site.start()
+    print(f"Web server started on port {port}")
+
+    # Telegram Bot Start
     await bot.start()
     me = await bot.get_me()
     print(f"Bot Started Successfully as @{me.username}")
 
-async def stop_bot():
+    # Keep bot alive
+    from pyrogram import idle
+    await idle()
+
+    # Stop Bot
     await bot.stop()
 
-async def main():
-    await start_bot()
-    try:
-        while True:
-            await asyncio.sleep(3600)
-    finally:
-        await stop_bot()
+if __name__ == "__main__":
+    asyncio.run(main())
 
 # Helper Functions
 def pwdlx_video(url: str, output_filename: str):
