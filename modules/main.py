@@ -36,7 +36,7 @@ bot = Client(
     "bot",
     api_id=37721193,
     api_hash="ed5cbbc0e14a777e1b2deb0c3f763874",
-    bot_token="8447894911:AAF6DVriwIb8J9WVewP3HFFSTMMvXaVXg2o",
+    bot_token="8889799148:AAGA5Axh88UAiHEvpUPxX5leXQB9gKOHRIw",
 )
 
 routes = web.RouteTableDef()
