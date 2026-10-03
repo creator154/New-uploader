@@ -36,9 +36,9 @@ cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt
 # Initialize Bot
 bot = Client(
     "bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    api_id=37721193,
+    api_hash="ed5cbbc0e14a777e1b2deb0c3f763874",
+    bot_token="8889799148:AAH7AEjpOeC75bD6DO-TpXsyO4Ie35QWu00"
 )
 
 # ---------------- WEB SERVER ----------------
