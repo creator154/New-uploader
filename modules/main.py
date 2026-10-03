@@ -40,35 +40,27 @@ bot_token="8889799148:AAH7AEjpOeC75bD6DO-TpXsyO4Ie35QWu00"
 )
 
 my_name = "Zx"
-
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
-Define aiohttp routes
-
-routes = web.RouteTableDef()
-
-@routes.get("/", allow_head=True)
-async def root_route_handler(request):
-return web.json_response("https://text-leech-bot-for-render.onrender.com/")
-
-async def web_server():
-web_app = web.Application(client_max_size=30000000)
-web_app.add_routes(routes)
-return web_app
-
-my_name = "Zx"
-
-cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
-
-Initialize Bot
-
+# Initialize Bot
 bot = Client(
-"bot",
-api_id=API_ID,
-api_hash=API_HASH,
-bot_token=BOT_TOKEN
+    "bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
 
+# ---------------- WEB SERVER ----------------
+routes = web.RouteTableDef()
+
+@routes.get("/")
+async def root(request):
+    return web.Response(text="Bot is Running!")
+
+async def web_server():
+    app = web.Application()
+    app.add_routes(routes)
+    return app
 ---------------- WEB SERVER ----------------
 
 routes = web.RouteTableDef()
