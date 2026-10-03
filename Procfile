@@ -1,2 +1,1 @@
-worker: python3 modules/main.py
-worker:sync
+worker: python3 main.py
