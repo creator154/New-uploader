@@ -30,15 +30,6 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(name)
 
-# Initialize the bot
-
-bot = Client(
-"bot",
-api_id=37721193,
-api_hash="ed5cbbc0e14a777e1b2deb0c3f763874",
-bot_token="8889799148:AAH7AEjpOeC75bD6DO-TpXsyO4Ie35QWu00"
-)
-
 my_name = "Zx"
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
@@ -61,18 +52,6 @@ async def web_server():
     app = web.Application()
     app.add_routes(routes)
     return app
----------------- WEB SERVER ----------------
-
-routes = web.RouteTableDef()
-
-@routes.get("/")
-async def root(request):
-return web.Response(text="Bot is Running!")
-
-async def web_server():
-app = web.Application()
-app.add_routes(routes)
-return app
 
 ---------------- START BOT ----------------
 
