@@ -53,7 +53,7 @@ async def web_server():
     app.add_routes(routes)
     return app
 
----------------- START BOT ----------------
+#---------------- START BOT ----------------
 
 async def start_bot():
 await bot.start()
