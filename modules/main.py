@@ -57,7 +57,7 @@ async def web_server():
     web_app.add_routes(routes)
     return web_app
 
-my_name = "jaat"
+my_name = "Zx"
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
@@ -875,8 +875,8 @@ async def txt_handler(bot: Client, m: Message):
 
             try:  
         
-                cc = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n🎞️Tɪᴛʟᴇ: {name1} {res}.mkv\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>'
-                cc1 = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n📑Tɪᴛʟᴇ: {name1} .pdf\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦जाटⁱˢß𝐚𝐜𝐤ツ✦━━━━━</code></pre>'
+                cc = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n🎞️Tɪᴛʟᴇ: {name1} {res}.mkv\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦ZX✦━━━━━</code></pre>'
+                cc1 = f'**🏷️ Iɴᴅᴇx ID: {str(count).zfill(3)}.\n\n📑Tɪᴛʟᴇ: {name1} .pdf\n\n<pre><code>📚 𝗕ᴀᴛᴄʜ: {b_name}</code></pre>\n\n📥 Uᴘʟᴏᴀᴅ Bʏ : </b> {CR}\n\n<pre><code>━━━━━✦ZX✦━━━━━</code></pre>'
                     
                 
                 if "drive" in url:
