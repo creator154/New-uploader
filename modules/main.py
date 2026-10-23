@@ -57,7 +57,7 @@ async def web_server():
     web_app.add_routes(routes)
     return web_app
 
-my_name = "@SumitTripathi"
+my_name = "Sumit"
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
@@ -395,7 +395,7 @@ async def txt_handler(bot: Client, m: Message):
     await input_wm.delete(True)
     # =====================
 
-    await editable.edit("**Enter Your Name or send 'Zx' for use default.\n Eg : @SumitTripathi **")
+    await editable.edit("**Enter Your Name or send 'Zx' for use default.\n Eg : @HeySumit **")
     input3: Message = await bot.listen(editable.chat.id)
     raw_text3 = input3.text
     await input3.delete(True)
