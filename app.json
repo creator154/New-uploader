@@ -9,7 +9,7 @@
     ],
     "repository": "https://github.com/SudoR2spr/txt-leech-bot",
     "success_url": "https://t.me/Opleech_WD",
-    "stack": "heroku-22",
+    "stack": "heroku-24",
     "env": {
         "API_ID": {
             "description": "𝑬𝒏𝒕𝒆𝒓 𝒀𝒐𝒖𝒓 𝑨𝒑𝒊 𝑰𝑫",
