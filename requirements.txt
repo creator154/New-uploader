@@ -1,3 +1,4 @@
+
 pyrogram
 pyromod
 tgcrypto
@@ -18,16 +19,5 @@ pymongo
 motor
 opencv-python-headless
 Pillow
-pyrogram
-pyromod
-tgcrypto
-requests
-aiohttp
-yt-dlp
-cloudscraper
-m3u8
-aiofiles
-pytube
 ffmpeg-python
 pycryptodomex
-gunicorn
