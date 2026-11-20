@@ -759,7 +759,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = new_classplus_cdn(url, raw_text2, output_filename)
-                    filename = res_file
+                    filename = output_filename
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
 
@@ -793,7 +793,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = pwdlx_video(url, output_filename)
-                    filename = res_file
+                    filename = output_filename
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
 
@@ -1070,7 +1070,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = new_classplus_cdn(url, raw_text2, output_filename)
-                    filename = res_file
+                    filename = output_filename
                     await prog.delete(True)
                     await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
                     count += 1
