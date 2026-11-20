@@ -103,8 +103,9 @@ async def main():
         await stop_bot()
 
 
-import os
-import subprocess
+    return output_filename
+    
+
 
 def pwdlx_video(url: str, output_filename: str):
     cmd = [
@@ -120,9 +121,39 @@ def pwdlx_video(url: str, output_filename: str):
         url,
     ]
 
-    subprocess.run(cmd, check=True)
-    return output_filename
-    
+    try:
+        print("[PWDLX] Starting download...", flush=True)
+
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        if result.stdout:
+            print(result.stdout[-3000:], flush=True)
+
+        if not os.path.exists(output_filename):
+            raise FileNotFoundError(
+                f"Downloaded file not found: {output_filename}"
+            )
+
+        if os.path.getsize(output_filename) == 0:
+            raise RuntimeError("Downloaded file is empty")
+
+        print(
+            f"[PWDLX] Download successful: {output_filename}",
+            flush=True
+        )
+
+        return output_filename
+
+    except subprocess.CalledProcessError as e:
+        print("[PWDLX] yt-dlp failed:", flush=True)
+        print(e.stderr[-5000:] if e.stderr else str(e), flush=True)
+        raise
+
 
 def extract_content_id(url):
     """URL se content ID extract karega with precise debugging"""
