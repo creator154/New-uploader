@@ -103,9 +103,8 @@ async def main():
         await stop_bot()
 
 
-    return output_filename
-    
-
+import os
+import subprocess
 
 def pwdlx_video(url: str, output_filename: str):
     cmd = [
@@ -121,200 +120,45 @@ def pwdlx_video(url: str, output_filename: str):
         url,
     ]
 
-    try:
-        print("[PWDLX] Starting download...", flush=True)
-
-        result = subprocess.run(
-            cmd,
-            check=True,
-            capture_output=True,
-            text=True
-        )
-
-        if result.stdout:
-            print(result.stdout[-3000:], flush=True)
-
-        if not os.path.exists(output_filename):
-            raise FileNotFoundError(
-                f"Downloaded file not found: {output_filename}"
-            )
-
-        if os.path.getsize(output_filename) == 0:
-            raise RuntimeError("Downloaded file is empty")
-
-        print(
-            f"[PWDLX] Download successful: {output_filename}",
-            flush=True
-        )
-
-        return output_filename
-
-    except subprocess.CalledProcessError as e:
-        print("[PWDLX] yt-dlp failed:", flush=True)
-        print(e.stderr[-5000:] if e.stderr else str(e), flush=True)
-        raise
-
-
+    subprocess.run(cmd, check=True)
+    return output_filename
+    
 def extract_content_id(url):
     """URL se content ID extract karega with precise debugging"""
     logger.info(f"extract_content_id called with URL: {url}")
-
+    
     try:
         if 'contentId=' in url:
             logger.info("Found 'contentId=' in URL")
             parts = url.split('contentId=')
-
+            
             if len(parts) > 1:
                 content_id = parts[1]
                 logger.info(f"Initial split content ID: {content_id}")
-
-                # URL parameters remove karein
+                
+                # 1. URL parameters ('?' ya '&') se split karein taaki baaki ka URL hat jaye
                 for char in ['?', '&']:
                     if char in content_id:
                         content_id = content_id.split(char)[0]
-                        logger.info(
-                            f"After removing query params ('{char}'): {content_id}"
-                        )
-
-                # Trailing .m3u8 remove karein
+                        logger.info(f"After removing query params ('{char}'): {content_id}")
+                
+                # 2. Agar end me '.m3u8' hai toh use hatao
                 if content_id.endswith('.m3u8'):
-                    content_id = content_id[:-5]
-                    logger.info(
-                        f"After removing trailing .m3u8: {content_id}"
-                    )
+                    content_id = content_id[:-5] # .m3u8 exactly 5 characters ka hota hai
+                    logger.info(f"After removing trailing .m3u8: {content_id}")
+                # Back-up check agar URL ke beech me kahin string ke sath .m3u8 laga ho
                 elif '.m3u8' in content_id:
                     content_id = content_id.split('.m3u8')[0]
-                    logger.info(
-                        f"After inline .m3u8 split: {content_id}"
-                    )
-
-                logger.info(f"Extracted content ID: {content_id}")
+                    logger.info(f"After inline .m3u8 split: {content_id}")
+                
+                logger.info(f"✅ Extracted content ID: {content_id}")
                 return content_id
-
-        logger.warning("No content ID found in URL")
+        
+        logger.warning("❌ No content ID found in URL")
         return None
-
+        
     except Exception as e:
-        logger.error(
-            f"Error extracting content ID: {e}",
-            exc_info=True
-        )
-        return None
-
-
-def safe_json_response(response, api_name):
-    """Safely parse API JSON response without crashing."""
-
-    print(f"[{api_name}] Status: {response.status_code}")
-    print(
-        f"[{api_name}] Content-Type: "
-        f"{response.headers.get('Content-Type')}"
-    )
-
-    if not response.text or not response.text.strip():
-        print(f"[{api_name}] Empty response received")
-        return {}
-
-    try:
-        data = response.json()
-
-        if not isinstance(data, dict):
-            print(f"[{api_name}] Unexpected JSON format")
-            return {}
-
-        return data
-
-    except ValueError:
-        print(f"[{api_name}] Invalid JSON response:")
-        print(response.text[:500])
-        return {}
-
-
-def get_jw_signed_url(content_id, access_token):
-
-    headers = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en",
-        "Origin": "https://web.classplusapp.com",
-        "Referer": "https://web.classplusapp.com/",
-        "Region": "IN",
-        "User-Agent": "Mozilla/5.0",
-        "X-Access-Token": access_token,
-    }
-
-    # 1. First try: contentId
-    content_api = (
-        "https://api.classplusapp.com/cams/uploader/video/"
-        f"jw-signed-url?contentId={quote(content_id, safe='')}"
-    )
-
-    print("[1] Trying contentId...")
-
-    try:
-        r = requests.get(
-            content_api,
-            headers=headers,
-            timeout=15
-        )
-
-        print(f"[CONTENT] Status: {r.status_code}")
-
-        if r.ok:
-            data = safe_json_response(r, "CONTENT API")
-            signed_url = data.get("url")
-
-            if signed_url:
-                hostname = (
-                    urlparse(signed_url).hostname or ""
-                ).lower()
-
-                print(f"[CONTENT] Host: {hostname}")
-
-                if hostname == "akamai-cdn.classplusapp.com":
-                    print("[+] Akamai signed URL found")
-                    return signed_url
-
-        else:
-            print("[CONTENT] API returned an unsuccessful status")
-
-    except requests.RequestException as e:
-        print(f"[CONTENT] Request error: {e}")
-
-    # 2. Fallback: same ID as liveSessionId
-    print("[2] Content URL not Akamai")
-    print("[+] Trying liveSessionId API...")
-
-    live_api = (
-        "https://api.classplusapp.com/cams/uploader/video/"
-        f"jw-signed-url?liveSessionId={quote(content_id, safe='')}"
-        "&isAgora=2"
-    )
-
-    try:
-        r = requests.get(
-            live_api,
-            headers=headers,
-            timeout=15
-        )
-
-        print(f"[LIVE] Status: {r.status_code}")
-
-        if not r.ok:
-            print("[LIVE] API returned an unsuccessful status")
-            return None
-
-        data = safe_json_response(r, "LIVE API")
-        signed_url = data.get("url")
-
-        if not signed_url:
-            print("[!] Live signed URL not found")
-            return None
-
-        print("[+] Live signed URL received")
-        return signed_url
-
-    except requests.RequestException as e:
-        print(f"[LIVE] Request error: {e}")
+        logger.error(f"❌ Error extracting content ID: {e}", exc_info=True)
         return None
 
 
@@ -790,7 +634,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = new_classplus_cdn(url, raw_text2, output_filename)
-                    filename = output_filename
+                    filename = res_file
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
 
@@ -824,7 +668,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = pwdlx_video(url, output_filename)
-                    filename = output_filename
+                    filename = res_file
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
 
@@ -1101,7 +945,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     res_file = new_classplus_cdn(url, raw_text2, output_filename)
-                    filename = output_filename
+                    filename = res_file
                     await prog.delete(True)
                     await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
                     count += 1
