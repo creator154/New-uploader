@@ -7,7 +7,7 @@ import asyncio
 import requests
 import subprocess
 import urllib.parse
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlparse, urljoin
 import logging
 import yt_dlp
 import cloudscraper
@@ -15,12 +15,10 @@ import m3u8
 import core as helper
 from utils import progress_bar
 from vars import API_ID, API_HASH, BOT_TOKEN
-from aiohttp import ClientSession
+from aiohttp import ClientSession, web
 from pyromod import listen
 from subprocess import getstatusoutput
 from pytube import YouTube
-from aiohttp import web
-from urllib.parse import quote, urljoin
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
@@ -28,40 +26,16 @@ from pyrogram.errors.exceptions.bad_request_400 import StickerEmojiInvalid
 from pyrogram.types.messages_and_media import message
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-
-
-
 logger = logging.getLogger(__name__)
-
-# Initialize the bot
-bot = Client(
-    "bot",
-    api_id=37721193,
-    api_hash="ed5cbbc0e14a777e1b2deb0c3f763874",
-    bot_token="8795042624:AAH5lJRo_E2mjPLc7MDlgbFNGmCww29pa_A"
-)
-
-my_name = "Zx"
-
-cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
-
-# Define aiohttp routes
-routes = web.RouteTableDef()
-
-@routes.get("/", allow_head=True)
-async def root_route_handler(request):
-    return web.json_response("https://text-leech-bot-for-render.onrender.com/")
-
-async def web_server():
-    web_app = web.Application(client_max_size=30000000)
-    web_app.add_routes(routes)
-    return web_app
 
 my_name = "ZX"
 
-cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
+cookies_file_path = os.getenv(
+    "COOKIES_FILE_PATH",
+    "/modules/youtube_cookies.txt"
+)
 
-# Initialize Bot
+# Initialize Bot using environment variables
 bot = Client(
     "bot",
     api_id=API_ID,
@@ -69,6 +43,19 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
+# Define aiohttp routes
+routes = web.RouteTableDef()
+
+@routes.get("/", allow_head=True)
+async def root_route_handler(request):
+    return web.json_response(
+        "https://text-leech-bot-for-render.onrender.com/"
+    )
+
+async def web_server():
+    web_app = web.Application(client_max_size=30000000)
+    web_app.add_routes(routes)
+    return web_app
 # ---------------- WEB SERVER ----------------
 
 routes = web.RouteTableDef()
