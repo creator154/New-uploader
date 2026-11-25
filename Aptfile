@@ -1,5 +1,6 @@
 ffmpeg
 libpulse0
+libpulse0-dev
 libglib2.0-0
 libsm6
 libxext6
