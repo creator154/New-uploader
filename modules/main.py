@@ -668,7 +668,7 @@ async def txt_handler(bot: Client, m: Message):
                     prog = await m.reply_text(Show)
                     output_filename = f"{name}.mp4"
                     # res_file = pwdlx_video(url, output_filename)
-                    res_file = await helper.download_video(url, cmd, name)
+                    res_file = await helper.download_hls_safe(url, name)
                     filename = res_file
                     if WM != "/d":
                         wm_file = f"wm_{filename}"
