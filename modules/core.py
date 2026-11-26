@@ -408,6 +408,82 @@ async def download_secure_video(url, name):
         return None
 
 
+
+def _hls_download_sync(url, name, workers=16):
+    import re, shutil, urllib.request
+    from urllib.parse import urljoin
+    from concurrent.futures import ThreadPoolExecutor
+
+    UA = {"User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36"}
+    work = f"{name}_hls_tmp"
+    shutil.rmtree(work, ignore_errors=True)
+    os.makedirs(work, exist_ok=True)
+
+    def fetch(u, path=None, tries=6):
+        for i in range(tries):
+            try:
+                req = urllib.request.Request(u, headers=UA)
+                with urllib.request.urlopen(req, timeout=40) as r:
+                    data = r.read()
+                if path:
+                    with open(path + ".part", "wb") as f:
+                        f.write(data)
+                    os.replace(path + ".part", path)
+                return data
+            except Exception:
+                if i == tries - 1:
+                    raise
+                time.sleep(1 + i)
+
+    text = fetch(url).decode("utf-8", "ignore")
+    if "#EXTM3U" not in text:
+        raise RuntimeError("API did not return an m3u8 playlist")
+    # master playlist -> pick last variant
+    if "#EXT-X-STREAM-INF" in text:
+        lines = [l for l in text.splitlines() if l and not l.startswith("#")]
+        url = urljoin(url, lines[-1])
+        text = fetch(url).decode("utf-8", "ignore")
+
+    jobs, out_lines, n = [], [], 0
+    for ln in text.splitlines():
+        if ln.startswith("#EXT-X-KEY") and 'URI="' in ln:
+            m = re.search(r'URI="([^"]+)"', ln)
+            kp = os.path.join(work, "enc.key")
+            fetch(urljoin(url, m.group(1)), kp)
+            ln = ln.replace(m.group(1), "enc.key")
+        elif ln and not ln.startswith("#"):
+            seg = f"{n:05d}.ts"; n += 1
+            jobs.append((urljoin(url, ln), os.path.join(work, seg)))
+            ln = seg
+        out_lines.append(ln)
+
+    with ThreadPoolExecutor(workers) as ex:
+        list(ex.map(lambda j: fetch(*j), jobs))
+
+    local = os.path.join(work, "local.m3u8")
+    with open(local, "w") as f:
+        f.write("\n".join(out_lines) + "\n")
+
+    final = f"{name}.mp4"
+    base = ["ffmpeg", "-y", "-loglevel", "error",
+            "-allowed_extensions", "ALL", "-protocol_whitelist", "file,crypto,data",
+            "-i", local, "-c", "copy"]
+    rc = subprocess.run(base + ["-bsf:a", "aac_adtstoasc", "-threads", "1", final]).returncode
+    if rc != 0 or not os.path.exists(final):
+        print(f"[HLS] mp4 remux failed rc={rc}, trying mkv", flush=True)
+        final = f"{name}.mkv"
+        rc = subprocess.run(base + ["-threads", "1", final]).returncode
+    shutil.rmtree(work, ignore_errors=True)
+    if rc != 0 or not os.path.exists(final):
+        raise RuntimeError(f"ffmpeg remux failed rc={rc}")
+    return final
+
+
+async def download_hls_safe(url, name):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _hls_download_sync, url, name)
+    
+
 async def download_video(url, cmd, name):
     download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
     global failed_counter
